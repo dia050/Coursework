@@ -1,29 +1,50 @@
 import os
-from securecrypt_pki_gui_master import (
-    hash_password,
-    derive_aes_key,
-    check_lock_state,
-    LOCK_STATE_FILE
-)
+import tempfile
+import pytest
+from securecrypt_pki_gui_master import hash_password, derive_aes_key, check_lock_state
 
-def test_hash_password_same_input_same_output():
+# ----------------------------
+# hash_password tests
+# ----------------------------
+def test_hash_password_output_length():
+    pwd = "mypassword"
     salt = os.urandom(16)
-    assert hash_password("pass", salt) == hash_password("pass", salt)
+    hashed = hash_password(pwd, salt)
+    assert isinstance(hashed, bytes)
+    assert len(hashed) == 32
 
-def test_hash_password_different_password():
+# ----------------------------
+# derive_aes_key tests
+# ----------------------------
+def test_derive_aes_key_consistency():
+    pwd = "mypassword"
     salt = os.urandom(16)
-    assert hash_password("a", salt) != hash_password("b", salt)
+    key1 = derive_aes_key(pwd, salt)
+    key2 = derive_aes_key(pwd, salt)
+    assert key1 == key2
 
-def test_derive_aes_key_length():
-    salt = os.urandom(16)
-    key = derive_aes_key("password", salt)
-    assert len(key) == 32
+def test_derive_aes_key_diff_salts():
+    pwd = "mypassword"
+    key1 = derive_aes_key(pwd, os.urandom(16))
+    key2 = derive_aes_key(pwd, os.urandom(16))
+    assert key1 != key2
 
-def test_check_lock_state_true(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    assert check_lock_state() is True
+# ----------------------------
+# check_lock_state tests
+# ----------------------------
+def test_check_lock_state_locked(tmp_path):
+    lock_file = tmp_path / "lock.json"
+    lock_file.write_text("LOCKED")
+    # patch the LOCK_STATE_FILE
+    import securecrypt_pki_gui_master as sc
+    orig = sc.LOCK_STATE_FILE
+    sc.LOCK_STATE_FILE = lock_file
+    assert not check_lock_state()
+    sc.LOCK_STATE_FILE = orig
 
-def test_check_lock_state_false(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    LOCK_STATE_FILE.write_text("LOCKED")
-    assert check_lock_state() is False
+def test_check_lock_state_unlocked(tmp_path):
+    import securecrypt_pki_gui_master as sc
+    orig = sc.LOCK_STATE_FILE
+    sc.LOCK_STATE_FILE = tmp_path / "nonexistent.lock"
+    assert check_lock_state()
+    sc.LOCK_STATE_FILE = orig
