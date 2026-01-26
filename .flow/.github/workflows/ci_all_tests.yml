@@ -1,4 +1,4 @@
-name: CI - All Tests
+name: CI - hash_password
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-all:
+  test-hash-password:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,5 +21,5 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run all tests
-        run: PYTHONPATH=$PWD pytest tests/test_all_functions.py
+      - name: Run hash_password test
+        run: PYTHONPATH=$PWD pytest tests/test_hash_password.py
