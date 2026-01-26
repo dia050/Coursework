@@ -22,4 +22,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run hash_password test
-        run: PYTHONPATH=$PWD pytest tests/test_hash_password.py
+        run: PYTHONPATH=$PWD pytest test_hash_password.py
